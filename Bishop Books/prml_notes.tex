@@ -1,0 +1,291 @@
+\documentclass{article}
+\usepackage{geometry}
+\geometry{a4paper, margin=1in} % Reduced margin 
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{setspace}
+\linespread{1.3}
+
+\title{PRML Notes}
+\author{Jack}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\section{Chapter 10: Variational Inference}
+\subsection{10.6 equation derivation}
+
+To derive the equation step by step, we start with the Evidence Lower Bound (ELBO) under mean-field variational inference and manipulate it to isolate a specific variational distribution \( q_j \). Here's the detailed derivation:
+
+\hrulefill
+
+ Step 1: Original ELBO Expression
+The ELBO is given by:
+\[
+\mathcal{L}(q) = \int \prod_i q_i \left\{ \ln p(\mathbf{X}, \mathbf{Z}) - \sum_i \ln q_i \right\} \mathrm{d}\mathbf{Z}.
+\]
+This expands to two terms:
+\[
+\mathcal{L}(q) = \underbrace{\int \prod_i q_i \ln p(\mathbf{X}, \mathbf{Z}) \mathrm{d}\mathbf{Z}}_{\text{Expected log joint}} - \underbrace{\sum_i \int q_i \ln q_i \mathrm{d}\mathbf{Z}_i}_{\text{Entropy of } q}.
+\]
+
+\hrulefill
+
+ Step 2: Factorize \( q(\mathbf{Z}) \)
+Under the mean-field assumption, \( q(\mathbf{Z}) = \prod_i q_i(\mathbf{Z}_i) \). Separate \( q_j \) from the product:
+\[
+\prod_i q_i = q_j \prod_{i \neq j} q_i.
+\]
+
+\hrulefill
+
+ Step 3: Split the Integral Over All Variables
+Decompose the integral over \( \mathbf{Z} \) into nested integrals over \( \mathbf{Z}_j \) and \( \mathbf{Z}_{i \neq j} \):
+\[
+\int \prod_i q_i \ln p(\mathbf{X}, \mathbf{Z}) \mathrm{d}\mathbf{Z} = \int q_j \left( \int \ln p(\mathbf{X}, \mathbf{Z}) \prod_{i \neq j} q_i \, \mathrm{d}\mathbf{Z}_{i \neq j} \right) \mathrm{d}\mathbf{Z}_j.
+\]
+This uses Fubini-Tonelli theorem to swap integrals (valid for probability densities \( q_i \)).
+
+\hrulefill
+
+ Step 4: Handle the Entropy Term
+The entropy \( -\sum_i \int q_i \ln q_i \mathrm{d}\mathbf{Z}_i \) splits into:
+\[
+-\int q_j \ln q_j \mathrm{d}\mathbf{Z}_j - \sum_{i \neq j} \int q_i \ln q_i \mathrm{d}\mathbf{Z}_i.
+\]
+Terms involving \( q_{i \neq j} \) are constants with respect to \( q_j \), grouped into "const."
+
+\hrulefill
+
+ Step 5: Combine Results
+Substitute Steps 3 and 4 into the ELBO:
+\[
+\mathcal{L}(q) = \int q_j \underbrace{\left( \int \ln p(\mathbf{X}, \mathbf{Z}) \prod_{i \neq j} q_i \, \mathrm{d}\mathbf{Z}_{i \neq j} \right)}_{\text{Expectation over } \mathbf{Z}_{i \neq j}} \mathrm{d}\mathbf{Z}_j - \int q_j \ln q_j \mathrm{d}\mathbf{Z}_j + \text{const}.
+\]
+
+\hrulefill
+
+ Step 6: Define \( \ln \widetilde{p}(\mathbf{X}, \mathbf{Z}_j) \)
+Let \( \ln \widetilde{p}(\mathbf{X}, \mathbf{Z}_j) = \mathbb{E}_{q_{i \neq j}}[\ln p(\mathbf{X}, \mathbf{Z})] \), which simplifies the expression to:
+\[
+\mathcal{L}(q) = \int q_j \ln \widetilde{p}(\mathbf{X}, \mathbf{Z}_j) \mathrm{d}\mathbf{Z}_j - \int q_j \ln q_j \mathrm{d}\mathbf{Z}_j + \text{const}.
+\]
+
+\hrulefill
+
+ Final Equation
+This matches the derivation in equation (10.6):
+
+\[
+\begin{aligned}
+\mathcal{L}(q) &= \int q_j \ln \widetilde{p}(\mathbf{X}, \mathbf{Z}_j) \mathrm{d}\mathbf{Z}_j - \int q_j \ln q_j \mathrm{d}\mathbf{Z}_j + \text{const}.
+\end{aligned}
+\]
+
+\hrulefill
+
+ Key Justifications
+1. Mean-Field Factorization: \( q(\mathbf{Z}) = \prod_i q_i \).
+2. Fubini-Tonelli Theorem: Ensures valid interchange of integrals.
+3. Entropy Separation: Constants arise from terms independent of \( q_j \).
+
+\subsection{10.11 Equation Derivation}
+
+To derive equation (10.11) for the optimal factor \( q_1^*(z_1) \) in the factorized Gaussian approximation, follow these steps:
+
+---
+
+ Step 1: Log-Joint Distribution of \( p(z) \)
+The Gaussian distribution \( p(z) = \mathcal{N}(z | \mu, \Lambda^{-1}) \) has:
+
+$$\ln p(z)=-\frac{1}{2}(z-\mu)^{\top}\Lambda(z-\mu)-\frac{D}{2}\ln(2\pi)-\frac{1}{2}\ln|\Sigma|.$$
+
+\[
+\ln p(z) = -\frac{1}{2}(z - \mu)^\top \Lambda (z - \mu) + \text{const}.
+\]
+Expanding for \( z = (z_1, z_2) \), the quadratic term becomes:
+\[
+\ln p(z) = -\frac{1}{2} \left[ \Lambda_{11}(z_1 - \mu_1)^2 + 2\Lambda_{12}(z_1 - \mu_1)(z_2 - \mu_2) + \Lambda_{22}(z_2 - \mu_2)^2 \right] + \text{const}.
+\]
+
+---
+
+ Step 2: Take Expectation Over \( z_2 \)
+From (10.9), \( \ln q_1^*(z_1) = \mathbb{E}_{z_2}[\ln p(z)] + \text{const} \). Substitute the expanded \( \ln p(z) \):
+\[
+\ln q_1^*(z_1) = \mathbb{E}_{z_2} \left[ -\frac{1}{2}\Lambda_{11}(z_1 - \mu_1)^2 - \Lambda_{12}(z_1 - \mu_1)(z_2 - \mu_2) \right] + \text{const}.
+\]
+Note: The \( \Lambda_{22}(z_2 - \mu_2)^2 \) term is independent of \( z_1 \) and absorbed into the constant.
+
+---
+
+ Step 3: Expand and Simplify
+1. Quadratic Term in \( z_1 \):
+   \[
+   -\frac{1}{2}\Lambda_{11}(z_1 - \mu_1)^2 = -\frac{1}{2}\Lambda_{11}z_1^2 + \Lambda_{11}\mu_1 z_1 - \frac{1}{2}\Lambda_{11}\mu_1^2.
+   \]
+   The \( \mu_1^2 \) term is absorbed into the constant.
+
+2. Cross-Term Involving \( z_2 \):
+   \[
+   -\Lambda_{12}(z_1 - \mu_1)\mathbb{E}_{z_2}[(z_2 - \mu_2)] = -\Lambda_{12}z_1\mathbb{E}_{z_2}[z_2 - \mu_2] + \Lambda_{12}\mu_1\mathbb{E}_{z_2}[z_2 - \mu_2].
+   \]
+   Since \( \mathbb{E}_{z_2}[z_2 - \mu_2] = \mathbb{E}[z_2] - \mu_2 \), and the second term is constant w.r.t \( z_1 \), it is absorbed.
+
+---
+
+ Step 4: Combine Terms
+Retaining only \( z_1 \)-dependent terms:
+\[
+\ln q_1^*(z_1) = -\frac{1}{2}\Lambda_{11}z_1^2 + \Lambda_{11}\mu_1 z_1 - \Lambda_{12}z_1\left(\mathbb{E}[z_2] - \mu_2\right) + \text{const}.
+\]
+This matches equation (10.11):
+\[
+\ln q_1^*(z_1) = -\frac{1}{2}z_1^2\Lambda_{11} + z_1\mu_1\Lambda_{11} - z_1\Lambda_{12}\left(\mathbb{E}[z_2] - \mu_2\right) + \text{const}.
+\]
+
+---
+
+ Step 5: Recognize the Gaussian Form
+The expression is quadratic in \( z_1 \), so \( q_1^*(z_1) \) is Gaussian:
+\[
+q_1^*(z_1) = \mathcal{N}\left(z_1 \,|\, m_1, \sigma_1^2\right),
+\]
+where:
+\[
+\sigma_1^{-2} = \Lambda_{11}, \quad m_1 = \mu_1 - \Lambda_{11}^{-1}\Lambda_{12}\left(\mathbb{E}[z_2] - \mu_2\right).
+\]
+
+---
+
+ Key Points
+- Expectation Handling: The cross-term \( \Lambda_{12}(z_1 - \mu_1)(z_2 - \mu_2) \) is linearized by taking \( \mathbb{E}_{z_2}[z_2] \).
+- Absorbing Constants: Terms independent of \( z_1 \) are grouped into "const," ensuring \( q_1^* \) normalizes to 1.
+
+\boxed{\text{Equation (10.11) is derived by expanding } \mathbb{E}_{z_2}[\ln p(z)] \text{ and retaining } z_1\text{-dependent terms.}}
+
+\subsection{10.16, 10.17, and 10.18}
+To prove equations (10.16), (10.17), and (10.18), we derive them step by step using properties of the Kullback-Leibler (KL) divergence and factorized distributions.
+
+---
+
+ 1. Proof of Equation (10.16): KL Divergence for Factorized \( q(\mathbf{Z}) \)
+
+The KL divergence between \( p(\mathbf{Z}) \) and a factorized distribution \( q(\mathbf{Z}) = \prod_{i=1}^M q_i(\mathbf{Z}_i) \) is:
+
+\[
+KL(p||q) = \int p(\mathbf{Z}) \ln \frac{p(\mathbf{Z})}{q(\mathbf{Z})} \, d\mathbf{Z}.
+\]
+
+Substitute \( q(\mathbf{Z}) = \prod_{i=1}^M q_i(\mathbf{Z}_i) \):
+
+\[
+KL(p||q) = \int p(\mathbf{Z}) \ln p(\mathbf{Z}) \, d\mathbf{Z} - \int p(\mathbf{Z}) \ln \left( \prod_{i=1}^M q_i(\mathbf{Z}_i) \right) \, d\mathbf{Z}.
+\]
+
+The first term is the negative entropy of \( p(\mathbf{Z}) \), which is a constant with respect to \( q(\mathbf{Z}) \). The second term simplifies to:
+
+\[
+KL(p||q) = -\int p(\mathbf{Z}) \sum_{i=1}^M \ln q_i(\mathbf{Z}_i) \, d\mathbf{Z} + \text{const}.
+\]
+
+This matches equation (10.16):
+
+\[
+KL(p||q) = -\int p(\mathbf{Z}) \left[ \sum_{i=1}^M \ln q_i(\mathbf{Z}_i) \right] \, d\mathbf{Z} + \text{const}.
+\]
+
+---
+
+ 2. Proof of Equation (10.17): Optimal Factor \( q_j^*(\mathbf{Z}_j) \)
+
+To minimize \( KL(p||q) \) with respect to \( q_j(\mathbf{Z}_j) \), treat all other factors \( q_{i \neq j} \) as fixed. The relevant part of \( KL(p||q) \) is:
+
+\[
+KL(p||q) = -\int p(\mathbf{Z}) \ln q_j(\mathbf{Z}_j) \, d\mathbf{Z} + \text{terms independent of } q_j.
+\]
+
+Introduce a Lagrange multiplier \( \lambda \) to enforce the constraint \( \int q_j(\mathbf{Z}_j) \, d\mathbf{Z}_j = 1 \). The Lagrangian is:
+
+\[
+\mathcal{L} = -\int p(\mathbf{Z}) \ln q_j(\mathbf{Z}_j) \, d\mathbf{Z} + \lambda \left( 1 - \int q_j(\mathbf{Z}_j) \, d\mathbf{Z}_j \right).
+\]
+
+Take the functional derivative with respect to \( q_j(\mathbf{Z}_j) \) and set it to zero:
+
+\[
+\frac{\delta \mathcal{L}}{\delta q_j} = -\frac{p(\mathbf{Z})}{q_j(\mathbf{Z}_j)} - \lambda = 0.
+\]
+
+Solve for \( q_j(\mathbf{Z}_j) \):
+
+\[
+q_j(\mathbf{Z}_j) = \frac{p(\mathbf{Z})}{\lambda}.
+\]
+
+Normalize \( q_j(\mathbf{Z}_j) \) by integrating over \( \mathbf{Z}_j \):
+
+\[
+\int q_j(\mathbf{Z}_j) \, d\mathbf{Z}_j = \int \frac{p(\mathbf{Z})}{\lambda} \, d\mathbf{Z}_j = 1 \implies \lambda = \int p(\mathbf{Z}) \, d\mathbf{Z}_j.
+\]
+
+Thus, the optimal factor is:
+
+\[
+q_j^*(\mathbf{Z}_j) = \frac{p(\mathbf{Z})}{\int p(\mathbf{Z}) \, d\mathbf{Z}_j} = p(\mathbf{Z}_j).
+\]
+
+This matches equation (10.17):
+
+\[
+q_j^*(\mathbf{Z}_j) = \int p(\mathbf{Z}) \prod_{i \neq j} d\mathbf{Z}_i = p(\mathbf{Z}_j).
+\]
+
+---
+
+ 3. Proof of Equation (10.18): KL Divergence \( KL(q||p) \)
+
+The KL divergence \( KL(q||p) \) is defined as:
+
+\[
+KL(q||p) = \int q(\mathbf{Z}) \ln \frac{q(\mathbf{Z})}{p(\mathbf{Z})} \, d\mathbf{Z}.
+\]
+
+This can be rewritten as:
+
+\[
+KL(q||p) = -\int q(\mathbf{Z}) \ln \frac{p(\mathbf{Z})}{q(\mathbf{Z})} \, d\mathbf{Z}.
+\]
+
+This matches equation (10.18):
+
+\[
+KL(q||p) = -\int q(\mathbf{Z}) \ln \left\{ \frac{p(\mathbf{Z})}{q(\mathbf{Z})} \right\} \, d\mathbf{Z}.
+\]
+
+---
+
+
+ Key Takeaways:
+1. Equation (10.16): Expresses \( KL(p||q) \) for factorized \( q(\mathbf{Z}) \), isolating terms dependent on \( q(\mathbf{Z}) \).
+2. Equation (10.17): Derives the optimal factor \( q_j^*(\mathbf{Z}_j) \) as the marginal distribution of \( p(\mathbf{Z}) \).
+3. Equation (10.18): Defines \( KL(q||p) \) in terms of \( q(\mathbf{Z}) \) and \( p(\mathbf{Z}) \). \\
+
+\boxed{
+  \begin{aligned}
+    &\text{Equations (10.16), (10.17), and (10.18) are derived} \\
+    &\text{using properties of KL divergence and factorized distributions.}
+  \end{aligned}
+}
+
+\section{Conclusion}
+This is a basic template for your PRML notes. You can expand upon it as needed.
+
+\end{document}
+
