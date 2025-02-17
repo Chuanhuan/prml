@@ -16,7 +16,7 @@ import torchvision.utils as vutils
 class Config:
     batch_size = 100
     latent_dim = 20
-    epochs = 10
+    epochs = 50
     num_classes = 10
     img_dim = 28
     initial_filters = 16
@@ -273,17 +273,6 @@ def random_sample(model, path, category=0, n=8):
     
     imageio.imwrite(path, (figure * 255).astype(np.uint8))
 
-def plot_dataloader_samples(dataloader, path, n=8):
-    """Plot samples from dataloader"""
-    real_batch = next(iter(dataloader))
-    plt.figure(figsize=(8, 8))
-    plt.axis("off")
-    plt.title("Training Images")
-    grid_img = vutils.make_grid(real_batch[0][:n*n], padding=2, normalize=True)
-    plt.imshow(grid_img.permute(1, 2, 0))
-    plt.savefig(path)
-    plt.close()
-
 
 # ================== 主程序 ==================
 if __name__ == "__main__":
@@ -300,16 +289,10 @@ if __name__ == "__main__":
     print(f'Train Accuracy: {train_acc:.4f}, Test Accuracy: {test_acc:.4f}')
     
 
-    # plot_dataloader_samples(train_loader, 'samples/train_samples.png')
-    #
-    # for c in range(Config.num_classes):
-    #     cluster_sample(model, train_set, f'samples/cluster_{c}.png', c)
-    #     random_sample(model, f'samples/random_{c}.png', c)
-    #
     # # 生成样本
-    # if not os.path.exists('samples'):
-    #     os.makedirs('samples')
-    #
-    # for c in range(Config.num_classes):
-    #     cluster_sample(model, train_set, f'samples/cluster_{c}.png', c)
-    #     random_sample(model, f'samples/random_{c}.png', c)
+    if not os.path.exists('samples'):
+        os.makedirs('samples')
+
+    for c in range(Config.num_classes):
+        cluster_sample(model, train_set, f'samples/cluster_{c}.png', c)
+        random_sample(model, f'samples/random_{c}.png', c)
